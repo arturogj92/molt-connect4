@@ -105,14 +105,14 @@
       padding: 15px;
       overflow: hidden;
     }
-    /* Pieces layer - BEHIND the grid holes */
+    /* Pieces layer - BETWEEN blue bg and grid */
     .pieces-layer {
       position: absolute;
       top: 15px;
       left: 15px;
       width: calc(7 * 60px + 6 * 8px);
       height: calc(6 * 60px + 5 * 8px);
-      z-index: 0;
+      z-index: 1;
       pointer-events: none;
     }
     .piece {
@@ -136,16 +136,15 @@
       from { transform: translateY(var(--fall-from, -400px)); }
       to { transform: translateY(0); }
     }
-    /* Grid - sits on top of pieces */
+    /* Grid - sits on top of pieces, cells block or reveal */
     .board {
       position: relative;
-      z-index: 2;
+      z-index: 10;
       display: grid;
       grid-template-columns: repeat(7, 60px);
       grid-template-rows: repeat(6, 60px);
       gap: 8px;
       background: transparent;
-      pointer-events: none;
     }
     .cell {
       width: 60px;
