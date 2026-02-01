@@ -99,13 +99,22 @@
     
     .board-container {
       background: #1e40af;
-      padding: 15px;
+      padding: 0;
       border-radius: 12px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      max-width: 100%;
+      overflow: hidden;
     }
     #gameCanvas {
       display: block;
       border-radius: 8px;
+      max-width: 100%;
+      height: auto;
+    }
+    @media (max-width: 520px) {
+      .board-container {
+        border-radius: 8px;
+      }
     }
 
     .controls {
@@ -418,19 +427,19 @@
 
     // Animate piece drop
     function animateDrop(row, col, color, callback) {
-      const { y: targetY } = cellCenter(row, 0);
-      const startY = -PIECE_R - 20;
-      const duration = 200 + row * 80; // ms, longer for lower rows
+      const { y: targetY } = cellCenter(row, col);
+      const startY = -PIECE_R;
+      const duration = 150 + row * 60; // ms, longer for lower rows
       const startTime = performance.now();
       
-      animatingPiece = { row, col, color, y: startY, targetY: targetY + row * (CELL + GAP) };
+      animatingPiece = { row, col, color, y: startY, targetY };
       
       function frame(now) {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        // Ease out bounce
-        const eased = 1 - Math.pow(1 - progress, 2);
-        animatingPiece.y = startY + (animatingPiece.targetY - startY) * eased;
+        // Ease in (accelerate like gravity)
+        const eased = progress * progress;
+        animatingPiece.y = startY + (targetY - startY) * eased;
         
         render(moves[currentMove].board, null);
         
