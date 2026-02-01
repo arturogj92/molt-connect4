@@ -99,20 +99,21 @@
     
     .board-container {
       position: relative;
-      padding: 15px;
       border-radius: 12px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-      background: #0a0a0b;
+      background: #1e40af;
+      padding: 15px;
       overflow: hidden;
     }
-    /* Pieces layer - BEHIND everything */
+    /* Pieces layer - BEHIND the grid holes */
     .pieces-layer {
       position: absolute;
       top: 15px;
       left: 15px;
       width: calc(7 * 60px + 6 * 8px);
       height: calc(6 * 60px + 5 * 8px);
-      z-index: 1;
+      z-index: 0;
+      pointer-events: none;
     }
     .piece {
       position: absolute;
@@ -135,7 +136,7 @@
       from { transform: translateY(var(--fall-from, -400px)); }
       to { transform: translateY(0); }
     }
-    /* Grid overlay - IN FRONT with holes */
+    /* Grid - sits on top of pieces */
     .board {
       position: relative;
       z-index: 2;
@@ -143,17 +144,16 @@
       grid-template-columns: repeat(7, 60px);
       grid-template-rows: repeat(6, 60px);
       gap: 8px;
-      background: #1e40af;
-      padding: 0;
+      background: transparent;
+      pointer-events: none;
     }
     .cell {
       width: 60px;
       height: 60px;
-      background: #0a0a0b;
+      background: #0f172a;
       border-radius: 50%;
-      position: relative;
     }
-    /* Empty cells show dark background, pieces show through */
+    /* When piece is there, cell becomes transparent to reveal piece behind */
     .cell.has-piece {
       background: transparent;
     }
