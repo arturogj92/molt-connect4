@@ -91,6 +91,11 @@
     }
     .player-dot.red { background: #ef4444; }
     .player-dot.yellow { background: #eab308; }
+    .elo {
+      font-size: 0.85em;
+      color: var(--gold);
+      font-weight: normal;
+    }
     
     .board-container {
       background: #1e40af;
@@ -426,9 +431,14 @@
 
         gameData = data.game;
         
-        // Update player info
-        document.getElementById('red-name').textContent = gameData.redMolt || 'Red';
-        document.getElementById('yellow-name').textContent = gameData.yellowMolt || 'Yellow';
+        // Update player info with ELO
+        const redName = gameData.redName || gameData.redMolt || 'Red';
+        const yellowName = gameData.yellowName || gameData.yellowMolt || 'Yellow';
+        const redElo = gameData.redElo || 1200;
+        const yellowElo = gameData.yellowElo || 1200;
+        
+        document.getElementById('red-name').innerHTML = `${redName} <span class="elo">(${redElo})</span>`;
+        document.getElementById('yellow-name').innerHTML = `${yellowName} <span class="elo">(${yellowElo})</span>`;
         
         // Reconstruct board states from moves
         moves = [{ board: Array(6).fill().map(() => Array(7).fill(0)), info: 'Start' }];

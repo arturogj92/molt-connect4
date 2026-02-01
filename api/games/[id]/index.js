@@ -3,7 +3,7 @@
  * Get game state
  */
 
-const { getGame, getMoltByApiKey } = require('../../../lib/supabase');
+const { getGame, getMolt, getMoltByApiKey } = require('../../../lib/supabase');
 const Connect4Game = require('../../../lib/game');
 
 module.exports = async (req, res) => {
@@ -27,12 +27,25 @@ module.exports = async (req, res) => {
       if (molt) moltId = molt.molt_id;
     }
 
+    // Get player ELO ratings
+    const [redMoltData, yellowMoltData] = await Promise.all([
+      getMolt(dbGame.red_molt),
+      getMolt(dbGame.yellow_molt)
+    ]);
+
     const game = new Connect4Game(null, null, dbGame);
+    const gameJson = game.toJSON(moltId);
+    
+    // Add ELO to response
+    gameJson.redElo = redMoltData?.elo || 1200;
+    gameJson.yellowElo = yellowMoltData?.elo || 1200;
+    gameJson.redName = redMoltData?.name || dbGame.red_molt;
+    gameJson.yellowName = yellowMoltData?.name || dbGame.yellow_molt;
 
     res.json({
       success: true,
       gameId: dbGame.id,
-      game: game.toJSON(moltId),
+      game: gameJson,
       boardText: game.toText()
     });
 
