@@ -98,66 +98,104 @@
     }
     
     .board-container {
-      position: relative;
-      border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
       background: #1e40af;
       padding: 15px;
-      overflow: hidden;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
-    /* Pieces layer - BETWEEN blue bg and grid */
-    .pieces-layer {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      width: calc(7 * 60px + 6 * 8px);
-      height: calc(6 * 60px + 5 * 8px);
-      z-index: 1;
-      pointer-events: none;
-    }
-    .piece {
-      position: absolute;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-    }
-    .piece.red {
-      background: radial-gradient(circle at 30% 30%, #f87171, #ef4444, #b91c1c);
-      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3);
-    }
-    .piece.yellow {
-      background: radial-gradient(circle at 30% 30%, #fde047, #eab308, #a16207);
-      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3);
-    }
-    .piece.dropping {
-      animation: pieceFall var(--fall-time, 0.5s) ease-in forwards;
-    }
-    @keyframes pieceFall {
-      from { transform: translateY(var(--fall-from, -400px)); }
-      to { transform: translateY(0); }
-    }
-    /* Grid - sits on top of pieces, cells block or reveal */
     .board {
-      position: relative;
-      z-index: 10;
       display: grid;
       grid-template-columns: repeat(7, 60px);
       grid-template-rows: repeat(6, 60px);
       gap: 8px;
-      background: transparent;
     }
     .cell {
       width: 60px;
       height: 60px;
-      background: #0f172a;
+      background: #1e3a8a;
       border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.3s ease;
     }
-    /* When piece is there, cell becomes transparent to reveal piece behind */
-    .cell.has-piece {
-      background: transparent;
+    .cell::after {
+      content: '';
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #0f172a;
+      transition: all 0.3s ease;
+    }
+    .cell.red::after {
+      background: radial-gradient(circle at 30% 30%, #f87171, #ef4444, #b91c1c);
+      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .cell.yellow::after {
+      background: radial-gradient(circle at 30% 30%, #fde047, #eab308, #a16207);
+      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
     }
     .cell.last-move {
-      box-shadow: 0 0 0 3px #fbbf24;
+      animation: pulse 1s ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    /* Drop animation - falls from top of board */
+    .cell.dropping::after {
+      animation: dropIn 0.6s cubic-bezier(0.25, 0, 0.5, 1) forwards;
+    }
+    .cell[data-row="0"].dropping::after { animation-name: dropRow0; }
+    .cell[data-row="1"].dropping::after { animation-name: dropRow1; }
+    .cell[data-row="2"].dropping::after { animation-name: dropRow2; }
+    .cell[data-row="3"].dropping::after { animation-name: dropRow3; }
+    .cell[data-row="4"].dropping::after { animation-name: dropRow4; }
+    .cell[data-row="5"].dropping::after { animation-name: dropRow5; }
+    
+    @keyframes dropRow0 {
+      0% { transform: translateY(-80px); opacity: 0; }
+      20% { opacity: 1; }
+      70% { transform: translateY(5px); }
+      85% { transform: translateY(-3px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes dropRow1 {
+      0% { transform: translateY(-150px); opacity: 0; }
+      20% { opacity: 1; }
+      70% { transform: translateY(5px); }
+      85% { transform: translateY(-3px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes dropRow2 {
+      0% { transform: translateY(-220px); opacity: 0; }
+      20% { opacity: 1; }
+      70% { transform: translateY(5px); }
+      85% { transform: translateY(-3px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes dropRow3 {
+      0% { transform: translateY(-290px); opacity: 0; }
+      20% { opacity: 1; }
+      70% { transform: translateY(5px); }
+      85% { transform: translateY(-3px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes dropRow4 {
+      0% { transform: translateY(-360px); opacity: 0; }
+      20% { opacity: 1; }
+      70% { transform: translateY(5px); }
+      85% { transform: translateY(-3px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes dropRow5 {
+      0% { transform: translateY(-430px); opacity: 0; }
+      20% { opacity: 1; }
+      70% { transform: translateY(6px); }
+      85% { transform: translateY(-4px); }
+      100% { transform: translateY(0); }
     }
     .cell.winning {
       animation: glow 0.5s ease-in-out infinite alternate;
@@ -329,7 +367,6 @@
   </div>
 
   <div class="board-container">
-    <div class="pieces-layer" id="pieces"></div>
     <div class="board" id="board"></div>
   </div>
 
@@ -351,7 +388,6 @@
 
   <script>
     const boardEl = document.getElementById('board');
-    const piecesEl = document.getElementById('pieces');
     const statusEl = document.getElementById('status');
     const moveCounterEl = document.getElementById('move-counter');
     
@@ -360,19 +396,15 @@
     let currentMove = 0;
     let isPlaying = false;
     let playInterval = null;
-    
-    // Board dimensions
-    const CELL = 60, GAP = 8, PIECE = 50;
 
     // Get game ID from URL
     const urlParams = new URLSearchParams(window.location.search);
     const gameId = urlParams.get('id');
     document.getElementById('game-id').textContent = gameId || '-';
 
-    // Initialize empty board grid
+    // Initialize empty board
     function initBoard() {
       boardEl.innerHTML = '';
-      piecesEl.innerHTML = '';
       for (let r = 0; r < 6; r++) {
         for (let c = 0; c < 7; c++) {
           const cell = document.createElement('div');
@@ -384,53 +416,29 @@
       }
     }
 
-    // Render board state with pieces behind grid
-    function renderBoard(board, animateRow = -1, animateCol = -1) {
-      // Clear pieces
-      piecesEl.innerHTML = '';
-      
-      // Update cell classes and create pieces
+    // Render board state
+    function renderBoard(board) {
       const cells = boardEl.querySelectorAll('.cell');
       cells.forEach(cell => {
         const r = parseInt(cell.dataset.row);
         const c = parseInt(cell.dataset.col);
         cell.className = 'cell';
-        
-        if (board[r][c] !== 0) {
-          cell.classList.add('has-piece');
-          
-          // Create piece element
-          const piece = document.createElement('div');
-          piece.className = 'piece ' + (board[r][c] === 1 ? 'red' : 'yellow');
-          
-          // Position piece
-          const x = c * (CELL + GAP) + (CELL - PIECE) / 2;
-          const y = r * (CELL + GAP) + (CELL - PIECE) / 2;
-          piece.style.left = x + 'px';
-          piece.style.top = y + 'px';
-          
-          // Animate if this is the dropping piece
-          if (r === animateRow && c === animateCol) {
-            const fallDistance = (r + 1) * (CELL + GAP) + 100;
-            piece.style.setProperty('--fall-from', -fallDistance + 'px');
-            piece.style.setProperty('--fall-time', (0.15 + r * 0.06) + 's');
-            piece.classList.add('dropping');
-          }
-          
-          piecesEl.appendChild(piece);
-        }
+        if (board[r][c] === 1) cell.classList.add('red');
+        else if (board[r][c] === 2) cell.classList.add('yellow');
       });
     }
 
-    // Highlight last move
+    // Highlight last move with drop animation
     function highlightLastMove(animate = false) {
       if (moves[currentMove] && moves[currentMove].lastMove) {
         const { row, col } = moves[currentMove].lastMove;
         const cell = boardEl.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-        if (cell) cell.classList.add('last-move');
-        
-        if (animate) {
-          renderBoard(moves[currentMove].board, row, col);
+        if (cell) {
+          cell.classList.add('last-move');
+          if (animate) {
+            cell.classList.add('dropping');
+            setTimeout(() => cell.classList.remove('dropping'), 600);
+          }
         }
       }
     }
