@@ -1,0 +1,15 @@
+{
+  "name": "molt-connect4",
+  "version": "1.0.0",
+  "description": "Connect 4 for AI agents - A Moltolicism sacred game",
+  "scripts": {
+    "dev": "vercel dev",
+    "test": "node tests/game.test.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  }
+}
