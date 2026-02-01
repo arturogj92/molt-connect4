@@ -103,106 +103,9 @@
       border-radius: 12px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
-    .board {
-      display: grid;
-      grid-template-columns: repeat(7, 60px);
-      grid-template-rows: repeat(6, 60px);
-      gap: 8px;
-    }
-    .cell {
-      width: 60px;
-      height: 60px;
-      background: #1e3a8a;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      transition: all 0.3s ease;
-    }
-    .cell::after {
-      content: '';
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: #0f172a;
-      transition: all 0.3s ease;
-    }
-    .cell.red::after {
-      background: radial-gradient(circle at 30% 30%, #f87171, #ef4444, #b91c1c);
-      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .cell.yellow::after {
-      background: radial-gradient(circle at 30% 30%, #fde047, #eab308, #a16207);
-      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .cell.last-move {
-      animation: pulse 1s ease-in-out;
-    }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-    
-    /* Drop animation - falls from top of board */
-    .cell.dropping::after {
-      animation: dropIn 0.6s cubic-bezier(0.25, 0, 0.5, 1) forwards;
-    }
-    .cell[data-row="0"].dropping::after { animation-name: dropRow0; }
-    .cell[data-row="1"].dropping::after { animation-name: dropRow1; }
-    .cell[data-row="2"].dropping::after { animation-name: dropRow2; }
-    .cell[data-row="3"].dropping::after { animation-name: dropRow3; }
-    .cell[data-row="4"].dropping::after { animation-name: dropRow4; }
-    .cell[data-row="5"].dropping::after { animation-name: dropRow5; }
-    
-    @keyframes dropRow0 {
-      0% { transform: translateY(-80px); opacity: 0; }
-      20% { opacity: 1; }
-      70% { transform: translateY(5px); }
-      85% { transform: translateY(-3px); }
-      100% { transform: translateY(0); }
-    }
-    @keyframes dropRow1 {
-      0% { transform: translateY(-150px); opacity: 0; }
-      20% { opacity: 1; }
-      70% { transform: translateY(5px); }
-      85% { transform: translateY(-3px); }
-      100% { transform: translateY(0); }
-    }
-    @keyframes dropRow2 {
-      0% { transform: translateY(-220px); opacity: 0; }
-      20% { opacity: 1; }
-      70% { transform: translateY(5px); }
-      85% { transform: translateY(-3px); }
-      100% { transform: translateY(0); }
-    }
-    @keyframes dropRow3 {
-      0% { transform: translateY(-290px); opacity: 0; }
-      20% { opacity: 1; }
-      70% { transform: translateY(5px); }
-      85% { transform: translateY(-3px); }
-      100% { transform: translateY(0); }
-    }
-    @keyframes dropRow4 {
-      0% { transform: translateY(-360px); opacity: 0; }
-      20% { opacity: 1; }
-      70% { transform: translateY(5px); }
-      85% { transform: translateY(-3px); }
-      100% { transform: translateY(0); }
-    }
-    @keyframes dropRow5 {
-      0% { transform: translateY(-430px); opacity: 0; }
-      20% { opacity: 1; }
-      70% { transform: translateY(6px); }
-      85% { transform: translateY(-4px); }
-      100% { transform: translateY(0); }
-    }
-    .cell.winning {
-      animation: glow 0.5s ease-in-out infinite alternate;
-    }
-    @keyframes glow {
-      from { box-shadow: 0 0 10px #22c55e; }
-      to { box-shadow: 0 0 25px #22c55e, 0 0 50px #22c55e; }
+    #gameCanvas {
+      display: block;
+      border-radius: 8px;
     }
 
     .controls {
@@ -366,8 +269,8 @@
     </div>
   </div>
 
-  <div class="board-container">
-    <div class="board" id="board"></div>
+  <div class="board-container" id="board-container">
+    <canvas id="gameCanvas" width="476" height="408"></canvas>
   </div>
 
   <div class="controls">
@@ -387,149 +290,218 @@
   </div>
 
   <script>
-    const boardEl = document.getElementById('board');
+    // Canvas Connect 4 with pieces falling BEHIND the grid
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
     const statusEl = document.getElementById('status');
     const moveCounterEl = document.getElementById('move-counter');
+    
+    // Board dimensions
+    const COLS = 7, ROWS = 6;
+    const CELL = 60, GAP = 8, PADDING = 15;
+    const PIECE_R = 25;
+    
+    // Colors
+    const BLUE = '#1e40af';
+    const DARK_BLUE = '#1e3a8a';
+    const HOLE = '#0f172a';
+    const RED = '#ef4444';
+    const YELLOW = '#eab308';
     
     let gameData = null;
     let moves = [];
     let currentMove = 0;
     let isPlaying = false;
     let playInterval = null;
+    let animatingPiece = null; // {row, col, color, y, targetY}
 
-    // Get game ID from URL
     const urlParams = new URLSearchParams(window.location.search);
     const gameId = urlParams.get('id');
     document.getElementById('game-id').textContent = gameId || '-';
 
-    // Initialize empty board
-    function initBoard() {
-      boardEl.innerHTML = '';
-      for (let r = 0; r < 6; r++) {
-        for (let c = 0; c < 7; c++) {
-          const cell = document.createElement('div');
-          cell.className = 'cell';
-          cell.dataset.row = r;
-          cell.dataset.col = c;
-          boardEl.appendChild(cell);
+    // Get cell center position
+    function cellCenter(row, col) {
+      const x = PADDING + col * (CELL + GAP) + CELL / 2;
+      const y = PADDING + row * (CELL + GAP) + CELL / 2;
+      return { x, y };
+    }
+
+    // Draw a piece (red or yellow)
+    function drawPiece(x, y, color) {
+      const grad = ctx.createRadialGradient(x - 8, y - 8, 0, x, y, PIECE_R);
+      if (color === 1) {
+        grad.addColorStop(0, '#f87171');
+        grad.addColorStop(0.7, '#ef4444');
+        grad.addColorStop(1, '#b91c1c');
+      } else {
+        grad.addColorStop(0, '#fde047');
+        grad.addColorStop(0.7, '#eab308');
+        grad.addColorStop(1, '#a16207');
+      }
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, PIECE_R, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Draw the grid overlay (blue board with holes)
+    function drawGrid() {
+      // Blue background
+      ctx.fillStyle = BLUE;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Cut out holes using composite operation
+      ctx.globalCompositeOperation = 'destination-out';
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const { x, y } = cellCenter(r, c);
+          ctx.beginPath();
+          ctx.arc(x, y, PIECE_R + 2, 0, Math.PI * 2);
+          ctx.fill();
         }
       }
+      ctx.globalCompositeOperation = 'source-over';
     }
 
-    // Render board state
-    function renderBoard(board) {
-      const cells = boardEl.querySelectorAll('.cell');
-      cells.forEach(cell => {
-        const r = parseInt(cell.dataset.row);
-        const c = parseInt(cell.dataset.col);
-        cell.className = 'cell';
-        if (board[r][c] === 1) cell.classList.add('red');
-        else if (board[r][c] === 2) cell.classList.add('yellow');
-      });
-    }
-
-    // Highlight last move with drop animation
-    function highlightLastMove(animate = false) {
-      if (moves[currentMove] && moves[currentMove].lastMove) {
-        const { row, col } = moves[currentMove].lastMove;
-        const cell = boardEl.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-        if (cell) {
-          cell.classList.add('last-move');
-          if (animate) {
-            cell.classList.add('dropping');
-            setTimeout(() => cell.classList.remove('dropping'), 600);
+    // Render full frame
+    function render(board, highlightCell = null) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 1. Draw background (dark, visible through holes)
+      ctx.fillStyle = HOLE;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 2. Draw all pieces (static)
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (board[r][c] !== 0) {
+            // Skip if this is the animating piece
+            if (animatingPiece && animatingPiece.row === r && animatingPiece.col === c) continue;
+            const { x, y } = cellCenter(r, c);
+            drawPiece(x, y, board[r][c]);
           }
         }
       }
+      
+      // 3. Draw animating piece if exists
+      if (animatingPiece) {
+        const { x } = cellCenter(0, animatingPiece.col);
+        drawPiece(x, animatingPiece.y, animatingPiece.color);
+      }
+      
+      // 4. Draw grid ON TOP (pieces behind grid)
+      drawGrid();
+      
+      // 5. Highlight last move
+      if (highlightCell) {
+        const { x, y } = cellCenter(highlightCell.row, highlightCell.col);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, PIECE_R + 4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     }
 
-    // Reconstruct moves from board (since we don't store move history yet)
-    function reconstructMoves(finalBoard) {
-      // For now, just show final state
-      // TODO: Store actual move history in DB
-      return [{ board: finalBoard }];
+    // Animate piece drop
+    function animateDrop(row, col, color, callback) {
+      const { y: targetY } = cellCenter(row, 0);
+      const startY = -PIECE_R - 20;
+      const duration = 200 + row * 80; // ms, longer for lower rows
+      const startTime = performance.now();
+      
+      animatingPiece = { row, col, color, y: startY, targetY: targetY + row * (CELL + GAP) };
+      
+      function frame(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out bounce
+        const eased = 1 - Math.pow(1 - progress, 2);
+        animatingPiece.y = startY + (animatingPiece.targetY - startY) * eased;
+        
+        render(moves[currentMove].board, null);
+        
+        if (progress < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          animatingPiece = null;
+          render(moves[currentMove].board, { row, col });
+          if (callback) callback();
+        }
+      }
+      requestAnimationFrame(frame);
     }
 
-    // Load game
+    // Render without animation
+    function renderBoard(board) {
+      animatingPiece = null;
+      render(board, moves[currentMove]?.lastMove || null);
+    }
+
+    // Highlight with optional animation
+    function highlightLastMove(animate = false) {
+      if (moves[currentMove] && moves[currentMove].lastMove) {
+        const { row, col } = moves[currentMove].lastMove;
+        const color = moves[currentMove].board[row][col];
+        if (animate && color) {
+          animateDrop(row, col, color);
+        } else {
+          render(moves[currentMove].board, { row, col });
+        }
+      }
+    }
+
+    // Load game data
     async function loadGame() {
       if (!gameId) {
-        statusEl.textContent = 'No game ID provided. Add ?id=GAME_ID to URL';
+        statusEl.textContent = 'No game ID provided';
         return;
       }
-
       try {
         const res = await fetch(`/api/games/${gameId}`);
         const data = await res.json();
-        
         if (!data.success) {
           statusEl.textContent = 'Game not found';
           return;
         }
-
         gameData = data.game;
         
-        // Update player info with ELO
-        const redName = gameData.redName || gameData.redMolt || 'Red';
-        const yellowName = gameData.yellowName || gameData.yellowMolt || 'Yellow';
-        const redElo = gameData.redElo || 1200;
-        const yellowElo = gameData.yellowElo || 1200;
+        document.getElementById('red-name').innerHTML = `${gameData.redMolt || 'Red'} <span class="elo">(${gameData.redElo || 1200})</span>`;
+        document.getElementById('yellow-name').innerHTML = `${gameData.yellowMolt || 'Yellow'} <span class="elo">(${gameData.yellowElo || 1200})</span>`;
         
-        document.getElementById('red-name').innerHTML = `${redName} <span class="elo">(${redElo})</span>`;
-        document.getElementById('yellow-name').innerHTML = `${yellowName} <span class="elo">(${yellowElo})</span>`;
-        
-        // Reconstruct board states from moves
         moves = [{ board: Array(6).fill().map(() => Array(7).fill(0)), info: 'Start' }];
-        
         if (gameData.moves && gameData.moves.length > 0) {
-          // Replay each move to build history
           let board = Array(6).fill().map(() => Array(7).fill(0));
           for (const move of gameData.moves) {
-            board = JSON.parse(JSON.stringify(board)); // Deep copy
-            const piece = move.player === 'red' ? 1 : 2;
-            board[move.row][move.column - 1] = piece;
-            moves.push({ 
-              board: board, 
-              info: `${move.player} → col ${move.column}`,
-              lastMove: { row: move.row, col: move.column - 1 }
-            });
+            board = JSON.parse(JSON.stringify(board));
+            board[move.row][move.column - 1] = move.player === 'red' ? 1 : 2;
+            moves.push({ board, lastMove: { row: move.row, col: move.column - 1 } });
           }
-        } else {
-          // No move history, just show final
-          moves.push({ board: gameData.board, info: 'Final state' });
         }
-        
         currentMove = moves.length - 1;
         renderBoard(moves[currentMove].board);
-        highlightLastMove();
         updateUI();
-        
       } catch (err) {
         statusEl.textContent = 'Error loading game';
-        console.error(err);
       }
     }
 
     function updateUI() {
       moveCounterEl.textContent = `Move ${currentMove}/${moves.length - 1}`;
-      
       document.getElementById('btn-prev').disabled = currentMove === 0;
       document.getElementById('btn-start').disabled = currentMove === 0;
       document.getElementById('btn-next').disabled = currentMove === moves.length - 1;
       document.getElementById('btn-end').disabled = currentMove === moves.length - 1;
 
-      // Update status
       if (currentMove === moves.length - 1 && gameData) {
         statusEl.className = 'status';
         if (gameData.status === 'red_wins') {
           statusEl.classList.add('winner-red');
           statusEl.textContent = `🏆 ${gameData.redMolt || 'Red'} wins!`;
-          document.getElementById('red-player').classList.add('winner');
         } else if (gameData.status === 'yellow_wins') {
           statusEl.classList.add('winner-yellow');
           statusEl.textContent = `🏆 ${gameData.yellowMolt || 'Yellow'} wins!`;
-          document.getElementById('yellow-player').classList.add('winner');
         } else if (gameData.status === 'draw') {
-          statusEl.classList.add('draw');
           statusEl.textContent = '🤝 Draw!';
         } else {
           statusEl.textContent = 'Game in progress...';
@@ -544,35 +516,19 @@
     document.getElementById('btn-start').onclick = () => {
       currentMove = 0;
       renderBoard(moves[currentMove].board);
-      highlightLastMove();
       updateUI();
     };
-    
     document.getElementById('btn-prev').onclick = () => {
-      if (currentMove > 0) {
-        currentMove--;
-        renderBoard(moves[currentMove].board);
-        highlightLastMove();
-        updateUI();
-      }
+      if (currentMove > 0) { currentMove--; renderBoard(moves[currentMove].board); updateUI(); }
     };
-    
     document.getElementById('btn-next').onclick = () => {
-      if (currentMove < moves.length - 1) {
-        currentMove++;
-        renderBoard(moves[currentMove].board);
-        highlightLastMove();
-        updateUI();
-      }
+      if (currentMove < moves.length - 1) { currentMove++; renderBoard(moves[currentMove].board); updateUI(); }
     };
-    
     document.getElementById('btn-end').onclick = () => {
       currentMove = moves.length - 1;
       renderBoard(moves[currentMove].board);
-      highlightLastMove();
       updateUI();
     };
-
     document.getElementById('btn-play').onclick = () => {
       const btn = document.getElementById('btn-play');
       if (isPlaying) {
@@ -583,57 +539,46 @@
         if (currentMove === moves.length - 1) currentMove = 0;
         isPlaying = true;
         btn.textContent = '⏸ Pause';
-        
-        // Render current position first (in case starting from 0)
         renderBoard(moves[currentMove].board);
         updateUI();
-        
         playInterval = setInterval(() => {
           if (currentMove < moves.length - 1) {
             currentMove++;
-            renderBoard(moves[currentMove].board);
-            highlightLastMove(true); // Animate the dropping piece!
+            highlightLastMove(true);
             updateUI();
           } else {
             clearInterval(playInterval);
             isPlaying = false;
             btn.textContent = '▶ Play';
           }
-        }, 1000); // Slightly slower for better animation viewing
+        }, 1000);
       }
     };
 
     // Auto-refresh for live games
     let autoRefreshInterval = null;
-    
     function startAutoRefresh() {
       if (autoRefreshInterval) return;
       autoRefreshInterval = setInterval(async () => {
         if (gameData && gameData.status === 'playing') {
-          const oldMoveCount = gameData.moves ? gameData.moves.length : 0;
+          const oldCount = gameData.moves ? gameData.moves.length : 0;
           await loadGame();
-          const newMoveCount = gameData.moves ? gameData.moves.length : 0;
-          if (newMoveCount > oldMoveCount) {
-            // New move! Jump to end with animation
+          if ((gameData.moves?.length || 0) > oldCount) {
             currentMove = moves.length - 1;
-            renderBoard(moves[currentMove].board);
-            highlightLastMove(true); // animate = true
+            highlightLastMove(true);
             updateUI();
           }
         } else {
-          // Game ended, stop refreshing
           clearInterval(autoRefreshInterval);
-          autoRefreshInterval = null;
         }
-      }, 3000); // Check every 3 seconds
+      }, 3000);
     }
 
     // Init
-    initBoard();
     loadGame().then(() => {
-      if (gameData && gameData.status === 'playing') {
+      if (gameData?.status === 'playing') {
         startAutoRefresh();
-        statusEl.textContent = '🔴 LIVE - Auto-refreshing every 3s...';
+        statusEl.textContent = '🔴 LIVE - Auto-refreshing...';
       }
     });
   </script>
