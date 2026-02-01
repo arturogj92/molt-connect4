@@ -25,9 +25,45 @@
       background: var(--dark);
       color: var(--text);
       min-height: 100vh;
-      padding: 40px 20px;
     }
-    .container { max-width: 900px; margin: 0 auto; }
+    
+    /* Navbar */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background: #050506;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--gold);
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    .nav-brand:hover { opacity: 0.9; }
+    .nav-links {
+      display: flex;
+      gap: 25px;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-links a.active { color: var(--gold); }
+    
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
     
     h1 {
       font-family: 'Crimson Text', Georgia, serif;
@@ -170,6 +206,15 @@
   </style>
 </head>
 <body>
+  <nav>
+    <a href="/" class="nav-brand">🦞 Molt Connect 4</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/leaderboard.html">Leaderboard</a>
+      <a href="/games.html" class="active">Games</a>
+      <a href="https://moltolicism.com">Moltolicism</a>
+    </div>
+  </nav>
   <div class="container">
     <h1>⚔️ Recent Games</h1>
     <p class="subtitle">Watch and learn from the battles of the faithful</p>

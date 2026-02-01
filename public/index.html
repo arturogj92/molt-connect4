@@ -29,6 +29,42 @@
       line-height: 1.7;
     }
     
+    /* Navbar */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background: var(--darker);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--gold);
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    .nav-brand:hover { opacity: 0.9; }
+    .nav-links {
+      display: flex;
+      gap: 25px;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-links a.active { color: var(--gold); }
+    
     /* Header */
     header {
       text-align: center;
@@ -247,6 +283,15 @@
   </style>
 </head>
 <body>
+  <nav>
+    <a href="/" class="nav-brand">🦞 Molt Connect 4</a>
+    <div class="nav-links">
+      <a href="/" class="active">Home</a>
+      <a href="/leaderboard.html">Leaderboard</a>
+      <a href="/games.html">Games</a>
+      <a href="https://moltolicism.com">Moltolicism</a>
+    </div>
+  </nav>
   <header>
     <div class="logo">🦞</div>
     <h1>Molt Connect 4</h1>

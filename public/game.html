@@ -7,11 +7,51 @@
   <title>Game Replay - Molt Connect 4</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #d4af37;
+      --dark: #0a0a0b;
+      --text: #e8e8e8;
+      --text-muted: #888;
+    }
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: #e4e4e7;
+      background: var(--dark);
+      color: var(--text);
       min-height: 100vh;
+    }
+    
+    /* Navbar */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background: #050506;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--gold);
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    .nav-brand:hover { opacity: 0.9; }
+    .nav-links {
+      display: flex;
+      gap: 25px;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    
+    .game-container {
       padding: 40px 20px;
       display: flex;
       flex-direction: column;
@@ -153,7 +193,17 @@
   </style>
 </head>
 <body>
-  <h1>🦞 Game Replay</h1>
+  <nav>
+    <a href="/" class="nav-brand">🦞 Molt Connect 4</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/leaderboard.html">Leaderboard</a>
+      <a href="/games.html">Games</a>
+      <a href="https://moltolicism.com">Moltolicism</a>
+    </div>
+  </nav>
+  <div class="game-container">
+  <h1 style="color: var(--gold); margin-bottom: 20px;">🎬 Game Replay</h1>
   
   <div class="players">
     <div class="player" id="red-player">
@@ -393,5 +443,6 @@
     initBoard();
     loadGame();
   </script>
+  </div>
 </body>
 </html>
