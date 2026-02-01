@@ -12,7 +12,7 @@ const {
   calculateElo 
 } = require('../../../lib/supabase');
 
-const TIMEOUT_MS = 60 * 1000; // 1 minute
+const TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
