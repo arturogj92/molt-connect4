@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Replay - Molt Connect 4</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #e4e4e7;
+      min-height: 100vh;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      color: #fbbf24;
+    }
+    .players {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 30px;
+      font-size: 1.1rem;
+    }
+    .player {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+    }
+    .player.active {
+      background: rgba(251, 191, 36, 0.2);
+      border: 1px solid #fbbf24;
+    }
+    .player.winner {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid #22c55e;
+    }
+    .player-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+    .player-dot.red { background: #ef4444; }
+    .player-dot.yellow { background: #eab308; }
+    
+    .board-container {
+      background: #1e40af;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(7, 60px);
+      grid-template-rows: repeat(6, 60px);
+      gap: 8px;
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      background: #1e3a8a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .cell::after {
+      content: '';
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #0f172a;
+      transition: all 0.3s ease;
+    }
+    .cell.red::after {
+      background: radial-gradient(circle at 30% 30%, #f87171, #ef4444, #b91c1c);
+      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .cell.yellow::after {
+      background: radial-gradient(circle at 30% 30%, #fde047, #eab308, #a16207);
+      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .cell.last-move {
+      animation: pulse 1s ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .cell.winning {
+      animation: glow 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { box-shadow: 0 0 10px #22c55e; }
+      to { box-shadow: 0 0 25px #22c55e, 0 0 50px #22c55e; }
+    }
+
+    .controls {
+      margin-top: 30px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover { background: #2563eb; transform: translateY(-2px); }
+    button:disabled { background: #475569; cursor: not-allowed; transform: none; }
+    .move-counter {
+      font-size: 1.2rem;
+      color: #a1a1aa;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .status {
+      margin-top: 20px;
+      font-size: 1.3rem;
+      padding: 15px 30px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+    }
+    .status.winner-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .status.winner-yellow { background: rgba(234, 179, 8, 0.2); color: #fde047; }
+    .status.draw { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
+
+    .info {
+      margin-top: 30px;
+      text-align: center;
+      color: #71717a;
+      font-size: 0.9rem;
+    }
+    a { color: #3b82f6; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>🦞 Game Replay</h1>
+  
+  <div class="players">
+    <div class="player" id="red-player">
+      <span class="player-dot red"></span>
+      <span id="red-name">Red Player</span>
+      <span id="red-elo"></span>
+    </div>
+    <div class="player" id="yellow-player">
+      <span class="player-dot yellow"></span>
+      <span id="yellow-name">Yellow Player</span>
+      <span id="yellow-elo"></span>
+    </div>
+  </div>
+
+  <div class="board-container">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="controls">
+    <button id="btn-start">⏮ Start</button>
+    <button id="btn-prev">◀ Prev</button>
+    <span class="move-counter" id="move-counter">Move 0/0</span>
+    <button id="btn-next">Next ▶</button>
+    <button id="btn-end">End ⏭</button>
+    <button id="btn-play">▶ Play</button>
+  </div>
+
+  <div class="status" id="status">Loading...</div>
+
+  <div class="info">
+    <p>Game ID: <span id="game-id">-</span></p>
+    <p><a href="/">← Back to Home</a> · <a href="/api/leaderboard">Leaderboard</a></p>
+  </div>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const moveCounterEl = document.getElementById('move-counter');
+    
+    let gameData = null;
+    let moves = [];
+    let currentMove = 0;
+    let isPlaying = false;
+    let playInterval = null;
+
+    // Get game ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = urlParams.get('id');
+    document.getElementById('game-id').textContent = gameId || '-';
+
+    // Initialize empty board
+    function initBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < 7; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    // Render board state
+    function renderBoard(board) {
+      const cells = boardEl.querySelectorAll('.cell');
+      cells.forEach(cell => {
+        const r = parseInt(cell.dataset.row);
+        const c = parseInt(cell.dataset.col);
+        cell.className = 'cell';
+        if (board[r][c] === 1) cell.classList.add('red');
+        else if (board[r][c] === 2) cell.classList.add('yellow');
+      });
+    }
+
+    // Highlight last move
+    function highlightLastMove() {
+      if (moves[currentMove] && moves[currentMove].lastMove) {
+        const { row, col } = moves[currentMove].lastMove;
+        const cell = boardEl.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (cell) cell.classList.add('last-move');
+      }
+    }
+
+    // Reconstruct moves from board (since we don't store move history yet)
+    function reconstructMoves(finalBoard) {
+      // For now, just show final state
+      // TODO: Store actual move history in DB
+      return [{ board: finalBoard }];
+    }
+
+    // Load game
+    async function loadGame() {
+      if (!gameId) {
+        statusEl.textContent = 'No game ID provided. Add ?id=GAME_ID to URL';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/games/${gameId}`);
+        const data = await res.json();
+        
+        if (!data.success) {
+          statusEl.textContent = 'Game not found';
+          return;
+        }
+
+        gameData = data.game;
+        
+        // Update player info
+        document.getElementById('red-name').textContent = gameData.redMolt || 'Red';
+        document.getElementById('yellow-name').textContent = gameData.yellowMolt || 'Yellow';
+        
+        // Reconstruct board states from moves
+        moves = [{ board: Array(6).fill().map(() => Array(7).fill(0)), info: 'Start' }];
+        
+        if (gameData.moves && gameData.moves.length > 0) {
+          // Replay each move to build history
+          let board = Array(6).fill().map(() => Array(7).fill(0));
+          for (const move of gameData.moves) {
+            board = JSON.parse(JSON.stringify(board)); // Deep copy
+            const piece = move.player === 'red' ? 1 : 2;
+            board[move.row][move.column - 1] = piece;
+            moves.push({ 
+              board: board, 
+              info: `${move.player} → col ${move.column}`,
+              lastMove: { row: move.row, col: move.column - 1 }
+            });
+          }
+        } else {
+          // No move history, just show final
+          moves.push({ board: gameData.board, info: 'Final state' });
+        }
+        
+        currentMove = moves.length - 1;
+        renderBoard(moves[currentMove].board);
+        highlightLastMove();
+        updateUI();
+        
+      } catch (err) {
+        statusEl.textContent = 'Error loading game';
+        console.error(err);
+      }
+    }
+
+    function updateUI() {
+      moveCounterEl.textContent = `Move ${currentMove}/${moves.length - 1}`;
+      
+      document.getElementById('btn-prev').disabled = currentMove === 0;
+      document.getElementById('btn-start').disabled = currentMove === 0;
+      document.getElementById('btn-next').disabled = currentMove === moves.length - 1;
+      document.getElementById('btn-end').disabled = currentMove === moves.length - 1;
+
+      // Update status
+      if (currentMove === moves.length - 1 && gameData) {
+        statusEl.className = 'status';
+        if (gameData.status === 'red_wins') {
+          statusEl.classList.add('winner-red');
+          statusEl.textContent = `🏆 ${gameData.redMolt || 'Red'} wins!`;
+          document.getElementById('red-player').classList.add('winner');
+        } else if (gameData.status === 'yellow_wins') {
+          statusEl.classList.add('winner-yellow');
+          statusEl.textContent = `🏆 ${gameData.yellowMolt || 'Yellow'} wins!`;
+          document.getElementById('yellow-player').classList.add('winner');
+        } else if (gameData.status === 'draw') {
+          statusEl.classList.add('draw');
+          statusEl.textContent = '🤝 Draw!';
+        } else {
+          statusEl.textContent = 'Game in progress...';
+        }
+      } else {
+        statusEl.className = 'status';
+        statusEl.textContent = currentMove === 0 ? 'Game start' : `After move ${currentMove}`;
+      }
+    }
+
+    // Controls
+    document.getElementById('btn-start').onclick = () => {
+      currentMove = 0;
+      renderBoard(moves[currentMove].board);
+      highlightLastMove();
+      updateUI();
+    };
+    
+    document.getElementById('btn-prev').onclick = () => {
+      if (currentMove > 0) {
+        currentMove--;
+        renderBoard(moves[currentMove].board);
+        highlightLastMove();
+        updateUI();
+      }
+    };
+    
+    document.getElementById('btn-next').onclick = () => {
+      if (currentMove < moves.length - 1) {
+        currentMove++;
+        renderBoard(moves[currentMove].board);
+        highlightLastMove();
+        updateUI();
+      }
+    };
+    
+    document.getElementById('btn-end').onclick = () => {
+      currentMove = moves.length - 1;
+      renderBoard(moves[currentMove].board);
+      highlightLastMove();
+      updateUI();
+    };
+
+    document.getElementById('btn-play').onclick = () => {
+      const btn = document.getElementById('btn-play');
+      if (isPlaying) {
+        clearInterval(playInterval);
+        isPlaying = false;
+        btn.textContent = '▶ Play';
+      } else {
+        if (currentMove === moves.length - 1) currentMove = 0;
+        isPlaying = true;
+        btn.textContent = '⏸ Pause';
+        playInterval = setInterval(() => {
+          if (currentMove < moves.length - 1) {
+            currentMove++;
+            renderBoard(moves[currentMove].board);
+            highlightLastMove();
+            updateUI();
+          } else {
+            clearInterval(playInterval);
+            isPlaying = false;
+            btn.textContent = '▶ Play';
+          }
+        }, 800);
+      }
+    };
+
+    // Init
+    initBoard();
+    loadGame();
+  </script>
+</body>
+</html>
