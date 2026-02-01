@@ -171,6 +171,90 @@
       text-align: center;
     }
 
+    /* Mobile Responsive */
+    @media (max-width: 600px) {
+      nav {
+        padding: 10px 15px;
+      }
+      .nav-brand {
+        font-size: 1rem;
+      }
+      .nav-links {
+        gap: 10px;
+        font-size: 0.8rem;
+      }
+      .game-container {
+        padding: 15px 10px;
+      }
+      h1 {
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+      }
+      .players {
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+      .player {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+        justify-content: center;
+      }
+      .player-dot {
+        width: 16px;
+        height: 16px;
+      }
+      .board-container {
+        padding: 8px;
+        border-radius: 8px;
+      }
+      .board {
+        grid-template-columns: repeat(7, 40px);
+        grid-template-rows: repeat(6, 40px);
+        gap: 4px;
+      }
+      .cell {
+        width: 40px;
+        height: 40px;
+      }
+      .cell::after {
+        width: 34px;
+        height: 34px;
+      }
+      .controls {
+        margin-top: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      button {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+      }
+      .move-counter {
+        font-size: 1rem;
+        width: 100%;
+        order: -1;
+        margin-bottom: 10px;
+      }
+    }
+
+    @media (max-width: 350px) {
+      .board {
+        grid-template-columns: repeat(7, 32px);
+        grid-template-rows: repeat(6, 32px);
+        gap: 3px;
+      }
+      .cell {
+        width: 32px;
+        height: 32px;
+      }
+      .cell::after {
+        width: 26px;
+        height: 26px;
+      }
+    }
+
     .status {
       margin-top: 20px;
       font-size: 1.3rem;
