@@ -385,6 +385,50 @@
       ctx.drawImage(gridImage, 0, 0);
     }
 
+    // Find winning cells (4 in a row)
+    function findWinningCells(board) {
+      const dirs = [[0,1], [1,0], [1,1], [1,-1]]; // horizontal, vertical, diagonal
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const piece = board[r][c];
+          if (piece === 0) continue;
+          for (const [dr, dc] of dirs) {
+            const cells = [{r, c}];
+            for (let i = 1; i < 4; i++) {
+              const nr = r + dr * i, nc = c + dc * i;
+              if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
+              if (board[nr][nc] !== piece) break;
+              cells.push({r: nr, c: nc});
+            }
+            if (cells.length === 4) return cells;
+          }
+        }
+      }
+      return null;
+    }
+    
+    // Victory animation state
+    let winningCells = null;
+    let victoryPhase = 0;
+    let victoryInterval = null;
+    
+    function startVictoryAnimation(cells) {
+      winningCells = cells;
+      victoryPhase = 0;
+      victoryInterval = setInterval(() => {
+        victoryPhase = (victoryPhase + 1) % 10;
+        render(moves[currentMove].board, null);
+      }, 100);
+    }
+    
+    function stopVictoryAnimation() {
+      if (victoryInterval) {
+        clearInterval(victoryInterval);
+        victoryInterval = null;
+      }
+      winningCells = null;
+    }
+
     // Render full frame
     function render(board, highlightCell = null) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -423,6 +467,22 @@
         ctx.arc(x, y, PIECE_R + 4, 0, Math.PI * 2);
         ctx.stroke();
       }
+      
+      // 6. Victory glow animation
+      if (winningCells) {
+        const glow = Math.abs(5 - victoryPhase) / 5; // 0 to 1 pulsing
+        ctx.strokeStyle = `rgba(34, 197, 94, ${0.5 + glow * 0.5})`;
+        ctx.lineWidth = 4 + glow * 3;
+        ctx.shadowColor = '#22c55e';
+        ctx.shadowBlur = 10 + glow * 15;
+        for (const cell of winningCells) {
+          const { x, y } = cellCenter(cell.r, cell.c);
+          ctx.beginPath();
+          ctx.arc(x, y, PIECE_R + 5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+      }
     }
 
     // Animate piece drop
@@ -457,7 +517,15 @@
     // Render without animation
     function renderBoard(board) {
       animatingPiece = null;
+      stopVictoryAnimation();
       render(board, moves[currentMove]?.lastMove || null);
+      
+      // Check for victory at final move
+      if (currentMove === moves.length - 1 && gameData && 
+          (gameData.status === 'red_wins' || gameData.status === 'yellow_wins')) {
+        const cells = findWinningCells(board);
+        if (cells) startVictoryAnimation(cells);
+      }
     }
 
     // Highlight with optional animation
