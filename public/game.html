@@ -583,18 +583,23 @@
         if (currentMove === moves.length - 1) currentMove = 0;
         isPlaying = true;
         btn.textContent = '⏸ Pause';
+        
+        // Render current position first (in case starting from 0)
+        renderBoard(moves[currentMove].board);
+        updateUI();
+        
         playInterval = setInterval(() => {
           if (currentMove < moves.length - 1) {
             currentMove++;
             renderBoard(moves[currentMove].board);
-            highlightLastMove();
+            highlightLastMove(true); // Animate the dropping piece!
             updateUI();
           } else {
             clearInterval(playInterval);
             isPlaying = false;
             btn.textContent = '▶ Play';
           }
-        }, 800);
+        }, 1000); // Slightly slower for better animation viewing
       }
     };
 
