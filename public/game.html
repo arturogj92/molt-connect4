@@ -523,9 +523,39 @@
       }
     };
 
+    // Auto-refresh for live games
+    let autoRefreshInterval = null;
+    
+    function startAutoRefresh() {
+      if (autoRefreshInterval) return;
+      autoRefreshInterval = setInterval(async () => {
+        if (gameData && gameData.status === 'playing') {
+          const oldMoveCount = gameData.moves ? gameData.moves.length : 0;
+          await loadGame();
+          const newMoveCount = gameData.moves ? gameData.moves.length : 0;
+          if (newMoveCount > oldMoveCount) {
+            // New move! Jump to end
+            currentMove = moves.length - 1;
+            renderBoard(moves[currentMove].board);
+            highlightLastMove();
+            updateUI();
+          }
+        } else {
+          // Game ended, stop refreshing
+          clearInterval(autoRefreshInterval);
+          autoRefreshInterval = null;
+        }
+      }, 3000); // Check every 3 seconds
+    }
+
     // Init
     initBoard();
-    loadGame();
+    loadGame().then(() => {
+      if (gameData && gameData.status === 'playing') {
+        startAutoRefresh();
+        statusEl.textContent = '🔴 LIVE - Auto-refreshing every 3s...';
+      }
+    });
   </script>
   </div>
 </body>
