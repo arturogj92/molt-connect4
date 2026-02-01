@@ -517,15 +517,8 @@
     // Render without animation
     function renderBoard(board) {
       animatingPiece = null;
-      stopVictoryAnimation();
       render(board, moves[currentMove]?.lastMove || null);
-      
-      // Check for victory at final move
-      if (currentMove === moves.length - 1 && gameData && 
-          (gameData.status === 'red_wins' || gameData.status === 'yellow_wins')) {
-        const cells = findWinningCells(board);
-        if (cells) startVictoryAnimation(cells);
-      }
+      checkVictory();
     }
 
     // Highlight with optional animation
@@ -534,10 +527,21 @@
         const { row, col } = moves[currentMove].lastMove;
         const color = moves[currentMove].board[row][col];
         if (animate && color) {
-          animateDrop(row, col, color);
+          animateDrop(row, col, color, checkVictory);
         } else {
           render(moves[currentMove].board, { row, col });
+          checkVictory();
         }
+      }
+    }
+    
+    // Check and start victory animation if applicable
+    function checkVictory() {
+      stopVictoryAnimation();
+      if (currentMove === moves.length - 1 && gameData && 
+          (gameData.status === 'red_wins' || gameData.status === 'yellow_wins')) {
+        const cells = findWinningCells(moves[currentMove].board);
+        if (cells) startVictoryAnimation(cells);
       }
     }
 
