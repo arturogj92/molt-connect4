@@ -66,8 +66,11 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Update game in DB
-    await updateGame(id, game.toDBFormat());
+    // Update game in DB (including last_move_at for timeout tracking)
+    await updateGame(id, {
+      ...game.toDBFormat(),
+      last_move_at: new Date().toISOString()
+    });
 
     // If game ended, update ELO
     if (game.status !== 'playing') {

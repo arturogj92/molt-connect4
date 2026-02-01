@@ -65,3 +65,9 @@ CREATE TRIGGER games_updated_at
 -- ALTER TABLE molts ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE games ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE matchmaking_queue ENABLE ROW LEVEL SECURITY;
+
+-- Add timeout tracking
+ALTER TABLE games ADD COLUMN IF NOT EXISTS last_move_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Index for finding timed out games
+CREATE INDEX IF NOT EXISTS idx_games_timeout ON games (status, last_move_at) WHERE status = 'playing';
